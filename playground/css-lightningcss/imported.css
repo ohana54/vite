@@ -10,16 +10,3 @@ pre {
   padding: 1em 1.5em;
   border-radius: 10px;
 }
-
-/* test nesting */
-.wrapper {
-  .nesting {
-    color: pink;
-  }
-}
-
-/* test url comma separation */
-.url-separated {
-  /* prettier-ignore */
-  background-image:url(images/cat.webp),url(images/dog.webp);
-}

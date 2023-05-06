@@ -447,7 +447,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (config.command === 'serve') {
         const getContentWithSourcemap = async (content: string) => {
           if (
-            config.css?.transformer === 'LightningCSS' ||
+            config.css?.transformer !== 'LightningCSS' &&
             config.css?.devSourcemap
           ) {
             const sourcemap = this.getCombinedSourcemap()
@@ -2133,9 +2133,14 @@ async function compileLightningCSS(
   urlReplacer?: CssUrlReplacer,
 ): ReturnType<typeof compileCSS> {
   const deps = new Set<string>()
+  // Relative path is needed to get stable hash when using CSS modules
+  const filename = cleanUrl(path.relative(config.root, id))
+  const toAbsolute = (filePath: string) =>
+    path.isAbsolute(filePath) ? filePath : path.join(config.root, filePath)
+
   const res = styleAttrRE.test(id)
     ? (await importLightningCSS()).transformStyleAttribute({
-        filename: id,
+        filename,
         code: Buffer.from(src),
         targets: cssConfig.targets,
         minify: config.isProduction && config.build.cssMinify,
@@ -2144,13 +2149,13 @@ async function compileLightningCSS(
     : await (
         await importLightningCSS()
       ).bundleAsync({
-        filename: id,
+        filename,
         resolver: {
-          read(filename) {
-            if (filename === id) {
+          read(filePath) {
+            if (filePath === filename) {
               return src
             }
-            return fs.readFileSync(filename, 'utf-8')
+            return fs.readFileSync(toAbsolute(filePath), 'utf-8')
           },
           async resolve(id, from) {
             const publicFile = checkPublicFile(id, config)
@@ -2158,7 +2163,10 @@ async function compileLightningCSS(
               return publicFile
             }
 
-            const resolved = await getAtImportResolvers(config).css(id, from)
+            const resolved = await getAtImportResolvers(config).css(
+              id,
+              toAbsolute(from),
+            )
 
             if (resolved) {
               deps.add(resolved)
