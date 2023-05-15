@@ -447,7 +447,7 @@ export function cssPostPlugin(config: ResolvedConfig): Plugin {
       if (config.command === 'serve') {
         const getContentWithSourcemap = async (content: string) => {
           if (
-            config.css?.transformer !== 'LightningCSS' &&
+            config.css?.transformer === 'LightningCSS' ||
             config.css?.devSourcemap
           ) {
             const sourcemap = this.getCombinedSourcemap()
